@@ -1,0 +1,9 @@
+*.py[oc]
+*.egg-info
+build
+dist
+target
+
+data
+
+.DS_Store

@@ -1,0 +1,21 @@
+{
+  "version"    : 1,
+  "formatters" : {
+    "basic": {
+      "format" : "[%(asctime)s] [%(levelname)s] [%(module)s.%(funcName)s] : %(message)s (%(filename)s:%(lineno)d)"
+    }
+  },
+  "handlers": {
+    "console": {
+      "class"     : "logging.StreamHandler",
+      "formatter" : "basic",
+      "stream"    : "ext://sys.stdout"
+    }
+  },
+  "loggers": {
+  },
+  "root": {
+    "level"    : "DEBUG",
+    "handlers" : ["console"]
+  }
+}
