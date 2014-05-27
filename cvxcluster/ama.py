@@ -118,9 +118,9 @@ class AcceleratedAMA(object):
 
       # construct the actual iterate using a combination of the previous step
       # and the last iteration.
-      alpha_ = (1.0 + np.sqrt(1 + 4 * alpha * alpha)) / 2.0
+      alpha, alpha_ = (1.0 + np.sqrt(1 + 4 * alpha * alpha)) / 2.0, alpha
 
-      lmbd   = lmbd_ + (alpha / alpha_) * (lmbd_ - lmbd__)
+      lmbd   = lmbd_ + (alpha_ / alpha) * (lmbd_ - lmbd__)
       lmbd__ = lmbd_
 
 
@@ -146,6 +146,5 @@ def fit_nu(problem):
     # `candidate` below.
     candidate = max(degrees[i] + degrees[j] for i, j, _ in iterrows(w))
     nu        = min(candidate, problem.n_samples)
-    log.info("Using nu = 1.99 / {} ({} samples)".format(nu, problem.n_samples))
-    return 1.99 / nu
-
+    log.info("Using nu = 1.0 / {} ({} samples)".format(nu, problem.n_samples))
+    return 1.0 / nu
