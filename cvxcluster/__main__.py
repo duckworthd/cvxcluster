@@ -10,6 +10,7 @@ import pandas as pd
 import pylab as pl
 
 from cvxcluster import *
+from cvxcluster.profile import profile
 
 
 def main(config):
@@ -80,6 +81,10 @@ def savestate(config, folder, solution, report):
   # save plot to PNG
   view(solution)
   pl.savefig(os.path.join(folder, "plot.png"))
+
+  # save profiling
+  with open(os.path.join(folder, "profile.txt"), 'wb') as f:
+    profile.print_stats(f)
 
 
 if __name__ == '__main__':
