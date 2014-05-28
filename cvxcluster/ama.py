@@ -6,6 +6,7 @@ import sys
 import numpy as np
 
 from .problem import Solution
+from .profile import profile
 from .utils import *
 
 
@@ -31,6 +32,7 @@ class AMA(object):
   def __init__(self, nu):
     self.nu = nu
 
+  @profile
   def minimize(self, problem, lmbd=None):
     X, gamma, w           = problem.X, problem.gamma, problem.w
     nu                    = self.nu
@@ -56,9 +58,7 @@ class AMA(object):
 
       # take a (projected) gradient step
       lmbd_ = np.zeros(lmbd.shape)
-      lmbd_ = lmbd - nu * g
-      for l, w_l in enumerate(w[:,2]):
-        lmbd_[l] = problem.project(lmbd_[l], gamma * w_l)
+      lmbd_ = problem.project(lmbd - nu * g, gamma * w[:,2])
       # for l, (i, j, w_l) in enumerate(iterrows(w)):
       #   lmbd_[l] = problem.project(lmbd[l] - nu * g[l], gamma * w_l)
 
@@ -81,6 +81,7 @@ class AcceleratedAMA(object):
   def __init__(self, nu):
     self.nu = nu
 
+  @profile
   def minimize(self, problem, lmbd=None):
     X, gamma, w           = problem.X, problem.gamma, problem.w
     nu                    = self.nu
@@ -110,9 +111,7 @@ class AcceleratedAMA(object):
 
       # take a (projected) gradient step
       lmbd_ = np.zeros(lmbd.shape)
-      lmbd_ = lmbd - nu * g
-      for l, w_l in enumerate(w[:,2]):
-        lmbd_[l] = problem.project(lmbd_[l], gamma * w_l)
+      lmbd_ = problem.project(lmbd - nu * g, gamma * w[:,2])
       # for l, (i, j, w_l) in enumerate(iterrows(w)):
       #   lmbd_[l] = problem.project(lmbd[l] - nu * g[l], gamma * w_l)
 
@@ -124,6 +123,7 @@ class AcceleratedAMA(object):
       lmbd__ = lmbd_
 
 
+@profile
 def fit_nu(problem):
   """Fit learning rate to problem instance."""
   log = logging.getLogger(__name__)

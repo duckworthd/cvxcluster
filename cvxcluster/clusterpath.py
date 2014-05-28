@@ -2,14 +2,16 @@ import logging; log = logging.getLogger(__name__)
 
 import numpy as np
 
-from .solve import solve
 from .conditions import RelativeTolerance
+from .profile import profile
+from .solve import solve
 
 
 __all__ = [
   'clusterpath',
 ]
 
+@profile
 def clusterpath(problem0, solver, conditions, gamma0=1e-3, step=1.2):
   """
   Calculate the "clusterpath" -- the sequence of gamma values that cause the

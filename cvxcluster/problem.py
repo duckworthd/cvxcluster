@@ -3,6 +3,7 @@ import time
 
 import numpy as np
 
+from .profile import profile
 from .utils import *
 
 __all__ = [
@@ -47,9 +48,8 @@ class Solution(object):
   @property
   def v(self):
     if self._v is None:
-      self._v = np.zeros(self.lmbd.shape)
-      for l, (i, j, w_l) in enumerate(iterrows(self.problem.w)):
-        self._v[l] = self.u[i] - self.u[j]
+      i, j = self.problem.w[:,0].astype(int), self.problem.w[:,1].astype(int)
+      self._v = self.u[i] - self.u[j]
     return self._v
 
   @property
@@ -135,6 +135,7 @@ class Problem(object):
     self.n_features = X.shape[1]
     self.n_pairs    = w.shape[0]
 
+  @profile
   def objective(self, u):
     X, gamma, w = self.X, self.gamma, self.w
     n_samples   = self.n_samples
@@ -163,6 +164,7 @@ class Problem(object):
 
     return result
 
+  @profile
   def dual(self, Delta, lmbd):
     X, gamma, w = self.X, self.gamma, self.w
     n_samples   = self.n_samples
@@ -184,6 +186,7 @@ class Problem(object):
   def u(self, Delta):
     return self.X + Delta
 
+  @profile
   def Delta(self, lmbd):
     n_samples, n_features = self.n_samples, self.n_features
     Delta                 = np.zeros( (n_samples, n_features) )
@@ -209,15 +212,17 @@ class L2(object):
     """|| l ||_2"""
     return self.norm(l)
 
-  def project(self, l, e):
+  @profile
+  def project(self, lmbd, eps):
     """Project onto {v : ||v||_2 <= e}"""
-    if self.dual_norm(l) <= e:
-      return l
-    else:
-      # subtract off a tiny bit to keep the dual norm <= e
-      if e > 0:
-        e = max(0, e - 1e-15)
-      return e * (l / self.dual_norm(l))
+    norms      = np.linalg.norm(lmbd, axis=1)
+    indicators = (norms <= eps)
+    projected = (
+      (1-indicators[:,None]) * (eps[:,None] * lmbd / norms[:,None]) +
+      (  indicators[:,None]) * lmbd
+    )
+
+    return projected
 
 
 class L_Inf(object):
@@ -234,7 +239,8 @@ class L_Inf(object):
   def dual_norm(self, l):
     return np.linalg.norm(l, 1)
 
-  def project(self, l, e):
+  @profile
+  def project(self, lmbd, eps):
     """Project onto {v : ||v||_1 <= e}
 
       min_{y} 0.5 ||y - l||_2^2
@@ -244,14 +250,14 @@ class L_Inf(object):
       John Duchi et al, "Efficient Projections onto the l_1-Ball for Learning
         in High Dimensions"
     """
-    e = max(0, e - 1e-15)   # cushion for numerical errors
+    ll        = np.sort(np.abs(lmbd), axis=1)[:, ::-1]
+    cs        = np.cumsum(ll, axis=1)
+    vtheta    = (cs - eps[:,None]) / (np.arange(ll.shape[1]) + 1.0)[None,:]
+    i         = np.argmin(ll - vtheta >= 0, axis=1) - 1
+    i         = np.where(i < 0, ll.shape[1]-1, i)
+    prevtheta = np.maximum(0.0, np.choose(i, vtheta.T))
+    a         = np.maximum(0.0, np.abs(lmbd) - prevtheta[:,None]) * np.sign(lmbd)
 
-    ll = np.sort(np.abs(l))[::-1]
-    cs = np.cumsum(ll)
-    vtheta = (cs-e)/(np.arange(len(ll))+1.0)
-    i = np.argmin(ll-vtheta >= 0)-1
-    prevtheta = max(0, vtheta[i])
-    a = np.maximum(0, np.abs(l) - prevtheta) * np.sign(l)
     return a
 
 
@@ -267,10 +273,14 @@ class L1(object):
   def dual_norm(self, l):
     return np.linalg.norm(l, np.inf)
 
-  def project(self, l, e):
+  @profile
+  def project(self, lmbd, eps):
     """Project onto {v : ||v||_inf <= e}"""
-    e = max(0, e - 1e-15)
-    l = np.array(l)
-    l[l < -e] = -e
-    l[l >  e] = e
-    return l
+    lmbd = lmbd.copy()
+    i = (lmbd < -eps[:,None])
+    lmbd = lmbd * (1-i) + -eps[:,None] * i
+
+    j = (lmbd >  eps[:,None])
+    lmbd = lmbd * (1-j) +  eps[:,None] * j
+
+    return lmbd

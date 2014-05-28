@@ -4,6 +4,7 @@ import sys
 import numpy as np
 
 from .problem import Solution
+from .profile import profile
 
 
 __all__ = [
@@ -13,6 +14,7 @@ __all__ = [
 class CoordinateAscent(object):
   """Solve Convex Clustering with Coordinate Ascent on the dual"""
 
+  @profile
   def minimize(self, problem, lmbd=None):
     X, gamma, w           = problem.X, problem.gamma, problem.w
     n_samples, n_features = problem.n_samples, problem.n_features
@@ -40,7 +42,7 @@ class CoordinateAscent(object):
         Delta[i]  -= lmbd[l]
         Delta[j]  += lmbd[l]
         l_mid      = -0.5 * (Delta[i] - Delta[j] + X[i] - X[j])
-        l_new      = problem.project(l_mid, gamma * w_l)
+        l_new      = problem.project(l_mid[None,:], np.asarray([gamma * w_l]))[0]
         lmbd[l]    = l_new
         Delta[i]  += l_new
         Delta[j]  -= l_new
