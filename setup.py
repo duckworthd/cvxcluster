@@ -1,7 +1,4 @@
-from setuptools import setup, find_packages, Extension
-
-from Cython.Build import cythonize
-import numpy as np
+from setuptools import setup, find_packages
 
 def version(name):
   import os
@@ -36,7 +33,6 @@ if __name__ == '__main__':
       install_requires  = [
         "numpy>=1.7.0",
         "scipy>=0.13.0",
-        "cython>=0.20.0",
       ],
       tests_require     = [
         "nose>=1.3.1",
@@ -49,11 +45,4 @@ if __name__ == '__main__':
         'cvxcluster'       : ['*.pyx'],
       },
       include_package_data = True,
-
-      # cython stuff
-      ext_modules = cythonize([
-        Extension("cvxcluster/*", ["cvxcluster/*.pyx"],
-          include_dirs = [np.get_include()],
-        ),
-      ]),
   )
