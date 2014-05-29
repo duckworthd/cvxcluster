@@ -1,5 +1,7 @@
-*.py[oc]
+*.c
 *.egg-info
+*.py[oc]
+*.so
 build
 dist
 target

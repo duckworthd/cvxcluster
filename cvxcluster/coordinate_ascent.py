@@ -3,6 +3,7 @@ import sys
 
 import numpy as np
 
+from ._coordinate_ascent import coordinate_ascent_iteration
 from .problem import Solution
 from .profile import profile
 
@@ -20,6 +21,7 @@ class CoordinateAscent(object):
     n_samples, n_features = problem.n_samples, problem.n_features
     n_pairs               = problem.n_pairs
     r                     = np.random.RandomState(0)
+    p                     = problem._norm
 
     if lmbd is None:
       lmbd = np.zeros( (n_pairs, n_features) )
@@ -37,13 +39,4 @@ class CoordinateAscent(object):
 
       yield Solution(problem, lmbd=lmbd, Delta=Delta)
 
-      for l in r.permutation(range(n_pairs)):
-        i, j, w_l  = w[l,:]
-        Delta[i]  -= lmbd[l]
-        Delta[j]  += lmbd[l]
-        l_mid      = -0.5 * (Delta[i] - Delta[j] + X[i] - X[j])
-        l_new      = problem.project(l_mid[None,:], np.asarray([gamma * w_l]))[0]
-        lmbd[l]    = l_new
-        Delta[i]  += l_new
-        Delta[j]  -= l_new
-
+      coordinate_ascent_iteration(X, Delta, w, lmbd, gamma, p)
