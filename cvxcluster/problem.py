@@ -6,6 +6,7 @@ import numpy as np
 from .profile import profile
 from .utils import *
 
+
 __all__ = [
   'Solution',
   'Problem',
@@ -13,7 +14,6 @@ __all__ = [
   'L_Inf',
   'L1',
 ]
-
 
 class Solution(object):
   """
@@ -127,9 +127,9 @@ class Problem(object):
   '''
 
   def __init__(self, X, gamma, w):
-    self.X     = X
+    self.X     = X.astype(float)
     self.gamma = gamma
-    self.w     = w
+    self.w     = w.astype(float)
 
     self.n_samples  = X.shape[0]
     self.n_features = X.shape[1]
@@ -142,25 +142,19 @@ class Problem(object):
     n_features  = self.n_features
     n_pairs     = self.n_pairs
 
-    result = 0.0
-    for i in range(n_samples):
-      result += 0.5 * (np.linalg.norm(X[i] - u[i], 2) ** 2)
+    w        = self.w[:,0:2].astype(int)
+    w_l      = self.w[:,2]
+    i, j     = w[:,0], w[:,1]
+    result   = 0.5 * np.sum(np.linalg.norm(X - u, 2, axis=1) ** 2.0)
+    result  += gamma * np.sum(self.norm(u[i] - u[j]) * w_l)
 
-    for l, (i, j, w_l) in enumerate(iterrows(w)):
-      result += gamma * w_l * self.norm(u[i] - u[j])
+    # # the above is just a vectorized version of this
+    # result = 0.0
+    # for i in range(n_samples):
+    #   result += 0.5 * (np.linalg.norm(X[i] - u[i], 2) ** 2)
 
-    return result
-
-  def objective_subgradient(self, u):
-    X, gamma, w = self.X, self.gamma, self.w
-    n_samples   = self.n_samples
-
-    result = u - X
-
-    for l, (i, j, w_l) in enumerate(iterrows(w)):
-      g = gamma * w_l * self.norm_subgradient(u[i] - u[j])
-      result[i] += g
-      result[j] -= g
+    # for l, (i, j, w_l) in enumerate(iterrows(w)):
+    #   result += gamma * w_l * self.norm(u[i] - u[j])
 
     return result
 
@@ -169,17 +163,22 @@ class Problem(object):
     X, gamma, w = self.X, self.gamma, self.w
     n_samples   = self.n_samples
 
-    result = 0.0
-
-    for i in range(n_samples):
-      result -= 0.5 * (np.linalg.norm(Delta[i]) ** 2)
-
-    for l, (i, j, w_l) in enumerate(iterrows(w)):
-      result -= lmbd[l].dot(X[i] - X[j])
+    i       = w[:,0].astype(int)
+    j       = w[:,1].astype(int)
+    result  = -0.5 * np.sum(np.linalg.norm(Delta, axis=1) ** 2.0)
+    result += -np.einsum('ij,ij->', lmbd, X[i]-X[j])
 
     # XXX technically, I should also iterate over all l to make sure lmbd[l] is
     # within the dual-norm ball imposed by w_l * gamma, but numerical errors
     # abound.
+
+    # # the above is just a vectorized version of this.
+    # result = 0.0
+    # for i in range(n_samples):
+    #   result -= 0.5 * (np.linalg.norm(Delta[i]) ** 2)
+
+    # for l, (i, j, w_l) in enumerate(iterrows(w)):
+    #   result -= lmbd[l].dot(X[i] - X[j])
 
     return result
 
@@ -188,25 +187,33 @@ class Problem(object):
 
   @profile
   def Delta(self, lmbd):
-    n_samples, n_features = self.n_samples, self.n_features
-    Delta                 = np.zeros( (n_samples, n_features) )
-    for l, (i, j, w_l) in enumerate(iterrows(self.w)):
-      Delta[i] += lmbd[l]
-      Delta[j] -= lmbd[l]
+    n_samples  = self.n_samples
+    n_features = self.n_features
+
+    Delta      = np.zeros( (n_samples, n_features) )
+    w          = self.w.astype(int)[:,0:2]
+    i, j       = w[:,0], w[:,1]
+
+    np.add     .at(Delta, i, lmbd)
+    np.subtract.at(Delta, j, lmbd)
+
+    # # the cryptic business above here is just an efficient way of doing this,
+    # for l, (i, j, w_l) in enumerate(iterrows(self.w)):
+    #   Delta[i] += lmbd[l]
+    #   Delta[j] -= lmbd[l]
+
     return Delta
 
 
 class L2(object):
   """L2 norm mixin for Problem"""
 
+  _norm = 2.0
+
   def norm(self, v):
     """|| v ||_2"""
-    return np.linalg.norm(v, 2)
-
-  def norm_subgradient(self, v):
-    n = self.norm(v)
-    if n == 0 : return np.zeros(v.shape)
-    else      : return v / n
+    v = np.atleast_2d(v)
+    return np.linalg.norm(v, self._norm, axis=1)
 
   def dual_norm(self, l):
     """|| l ||_2"""
@@ -215,6 +222,9 @@ class L2(object):
   @profile
   def project(self, lmbd, eps):
     """Project onto {v : ||v||_2 <= e}"""
+    lmbd = np.atleast_2d(lmbd)
+    eps  = np.atleast_1d(eps)
+
     norms      = np.linalg.norm(lmbd, axis=1)
     indicators = (norms <= eps)
     projected = (
@@ -228,16 +238,15 @@ class L2(object):
 class L_Inf(object):
   """L-infinity norm mixin for Problem"""
 
-  def norm(self, v):
-    return np.linalg.norm(v, np.inf)
+  _norm = np.inf
 
-  def norm_subgradient(self, v):
-    n = self.norm(v)
-    if n == 0 : return np.zeros(v.shape)
-    else      : return np.sign(v) * (np.abs(v) >= n)
+  def norm(self, v):
+    v = np.atleast_2d(v)
+    return np.linalg.norm(v, np.inf, axis=1)
 
   def dual_norm(self, l):
-    return np.linalg.norm(l, 1)
+    l = np.atleast_2d(l)
+    return np.linalg.norm(l, 1, axis=1)
 
   @profile
   def project(self, lmbd, eps):
@@ -250,6 +259,9 @@ class L_Inf(object):
       John Duchi et al, "Efficient Projections onto the l_1-Ball for Learning
         in High Dimensions"
     """
+    lmbd = np.atleast_2d(lmbd)
+    eps  = np.atleast_1d(eps)
+
     ll        = np.sort(np.abs(lmbd), axis=1)[:, ::-1]
     cs        = np.cumsum(ll, axis=1)
     vtheta    = (cs - eps[:,None]) / (np.arange(ll.shape[1]) + 1.0)[None,:]
@@ -264,18 +276,22 @@ class L_Inf(object):
 class L1(object):
   """L1 norm mixin for Problem"""
 
-  def norm(self, v):
-    return np.linalg.norm(v, 1)
+  _norm = 1.0
 
-  def norm_subgradient(self, v):
-    return np.sign(v)
+  def norm(self, v):
+    v = np.atleast_2d(v)
+    return np.linalg.norm(v, 1, axis=1)
 
   def dual_norm(self, l):
-    return np.linalg.norm(l, np.inf)
+    l = np.atleast_2d(l)
+    return np.linalg.norm(l, np.inf, axis=1)
 
   @profile
   def project(self, lmbd, eps):
     """Project onto {v : ||v||_inf <= e}"""
+    lmbd = np.atleast_2d(lmbd)
+    eps  = np.atleast_1d(eps)
+
     lmbd = lmbd.copy()
     i = (lmbd < -eps[:,None])
     lmbd = lmbd * (1-i) + -eps[:,None] * i
