@@ -15,6 +15,13 @@ __all__ = [
 class CoordinateAscent(object):
   """Solve Convex Clustering with Coordinate Ascent on the dual"""
 
+  def __init__(self):
+    # what's going on here, you ask? I'm forcing to compile JIT code now by
+    # calling it once. The reason is, JIT compilation skews profiling times if
+    # it needs to happen on the first iteration.
+    X = np.zeros( (2,3), dtype=float)
+    coordinate_ascent_iteration(X, X, X, X, 0.0, 1.0, np.arange(2))
+
   @profile
   def minimize(self, problem, lmbd=None):
     X, gamma, w           = problem.X, problem.gamma, problem.w
@@ -39,4 +46,6 @@ class CoordinateAscent(object):
 
       yield Solution(problem, lmbd=lmbd, Delta=Delta)
 
-      coordinate_ascent_iteration(X, Delta, w, lmbd, gamma, p)
+      coordinate_ascent_iteration(
+        X, Delta, w, lmbd, gamma, p, r.permutation(np.arange(n_pairs)),
+      )

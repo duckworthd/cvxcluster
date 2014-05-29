@@ -99,15 +99,15 @@ def project_inf(lmbd, eps, out, tmp):
         out[j] = max(0, abs(lmbd[j])-theta) * sign(lmbd[j])
 
 
-@jit("void(f8[:,:],f8[:,:],f8[:,:],f8[:,:],f8,f8)")
-def coordinate_ascent_iteration(X, Delta, w, lmbd, gamma, p):
+@jit("void(f8[:,:],f8[:,:],f8[:,:],f8[:,:],f8,f8,i8[:])")
+def coordinate_ascent_iteration(X, Delta, w, lmbd, gamma, p, ls):
   # numpy arrays can't be constructed in numba's nopython mode. I initialize
   # these temporary arrays here, just to get things going.
   tmp   = np.empty_like(X[0])
   tmp2  = np.empty_like(X[0])
 
   for l in range(w.shape[0]):
-    _iterate(X, Delta, w, lmbd, gamma, p, l, tmp, tmp2)
+    _iterate(X, Delta, w, lmbd, gamma, p, ls[l], tmp, tmp2)
 
 
 @njit("void(f8[:,:],f8[:,:],f8[:,:],f8[:,:],i4,f8,f8,f8[:],f8[:])")
