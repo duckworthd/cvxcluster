@@ -15,7 +15,7 @@ run: dependencies
 	. /tmp/$(PROJECT)/bin/activate; python -m $(PROJECT) ${ARGS}
 
 clean:
-	find $(PROJECT) | ack '.+[.](c|so|pyc)' | xargs -I {} 'rm -rf {}'
+	find $(PROJECT) | ack '.+[.](c|so|pyc)' | xargs -I {} rm -rf {}
 	rm -rf *.pyc *.pyo *.egg-info *.egg dist build target
 
 clean-env: clean
