@@ -39,6 +39,4 @@ class CoordinateAscent(object):
 
       yield Solution(problem, lmbd=lmbd, Delta=Delta)
 
-      # use Cython implementation of coordinate ascent It gives ~2x gain over a
-      # vanilla Python implementation
       coordinate_ascent_iteration(X, Delta, w, lmbd, gamma, p)

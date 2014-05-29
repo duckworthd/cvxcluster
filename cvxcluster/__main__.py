@@ -38,7 +38,7 @@ def main(config):
   if config.atol is not None    : conditions.append(AbsoluteTolerance(config.atol))
   if config.maxiter is not None : conditions.append(MaxIterations(config.maxiter))
   if config.maxtime is not None : conditions.append(MaxTime(config.maxtime))
-  if config.mingrad is not None : conditions.append(MinGradient(config.mingrad))
+  # if config.mingrad is not None : conditions.append(MinGradient(config.mingrad))
 
   solution, report = solve(problem, solver, conditions)
 
