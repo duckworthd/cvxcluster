@@ -16,6 +16,8 @@ run: dependencies
 
 clean:
 	find $(PROJECT) -iname '*.pyc' | xargs rm
+	find $(PROJECT) -iname '*.so'  | xargs rm
+	find $(PROJECT) -iname '*.c'   | xargs rm
 	rm -rf *.pyc *.pyo *.egg-info dist build target
 
 clean-env: clean
@@ -26,3 +28,6 @@ register:
 
 deploy: test
 	. /tmp/$(PROJECT)/bin/activate; python setup.py sdist upload
+
+build:
+	. /tmp/$(PROJECT)/bin/activate; python setup.py build
