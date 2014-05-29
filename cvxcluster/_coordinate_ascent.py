@@ -98,23 +98,6 @@ def project_inf(lmbd, eps, out, tmp):
       for j in range(ndim):
         out[j] = max(0, abs(lmbd[j])-theta) * sign(lmbd[j])
 
-  if not found:
-    for i in range(ndim):
-      out[i] = 1e100
-
-
-def project_inf_old(l, e, out, _2):
-  ll        = np.sort(np.abs(l))[::-1]
-  cs        = np.cumsum(ll)
-  vtheta    = (cs-e)/(np.arange(len(ll))+1.0)
-  i         = np.argmin(ll-vtheta >= 0)-1
-  prevtheta = max(0, vtheta[i])
-  a         = np.maximum(0, np.abs(l) - prevtheta) * np.sign(l)
-
-  out[:] = a[:]
-
-  return a
-
 
 @jit("void(f8[:,:],f8[:,:],f8[:,:],f8[:,:],f8,f8)")
 def coordinate_ascent_iteration(X, Delta, w, lmbd, gamma, p):
