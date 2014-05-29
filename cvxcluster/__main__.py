@@ -117,11 +117,11 @@ if __name__ == '__main__':
     default = None,
     help    = "Maximum number of seconds to run until"
   )
-  parser.add_argument("--mingrad",
-    type    = float,
-    default = None,
-    help    = "Minimum value for a subgradient"
-  )
+  # parser.add_argument("--mingrad",
+  #   type    = float,
+  #   default = None,
+  #   help    = "Minimum value for a subgradient"
+  # )
   parser.add_argument("--atol",
     type    = float,
     default = None,

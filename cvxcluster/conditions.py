@@ -13,7 +13,7 @@ __all__ = [
   'AbsoluteTolerance',
   'MaxIterations',
   'MaxTime',
-  'MinGradient',
+#   'MinGradient',
   'UserInput',
 ]
 
@@ -110,24 +110,26 @@ class MaxTime(object):
     self.start = None
 
 
-class MinGradient(object):
-
-  def __init__(self, norm):
-    self.norm = norm
-
-  def __call__(self, solution):
-    gradient = solution.problem.objective_subgradient(solution.u)
-    size     = np.product(gradient.shape)
-
-    norm     = np.linalg.norm(gradient.reshape((size,))) ** 2.0
-
-    logging.getLogger(__name__).info("gradient norm: {}".format(norm))
-
-    return norm <= self.norm
-
-  def reset(self):
-    pass
-
+# # Removed, as (1) it doesn't necessarily ever converge and (2) I didn't feel
+# # like optimizing the hell out of subgradient computations.
+# class MinGradient(object):
+#
+#   def __init__(self, norm):
+#     self.norm = norm
+#
+#   def __call__(self, solution):
+#     gradient = solution.problem.objective_subgradient(solution.u)
+#     size     = np.product(gradient.shape)
+#
+#     norm     = np.linalg.norm(gradient.reshape((size,))) ** 2.0
+#
+#     logging.getLogger(__name__).info("gradient norm: {}".format(norm))
+#
+#     return norm <= self.norm
+#
+#   def reset(self):
+#     pass
+#
 
 class UserInput(object):
 
