@@ -18,7 +18,7 @@ clean:
 	find $(PROJECT) -iname '*.pyc' | xargs rm
 	find $(PROJECT) -iname '*.so'  | xargs rm
 	find $(PROJECT) -iname '*.c'   | xargs rm
-	rm -rf *.pyc *.pyo *.egg-info dist build target
+	rm -rf *.pyc *.pyo *.egg-info *.egg dist build target
 
 clean-env: clean
 	rm -rf /tmp/$(PROJECT)
