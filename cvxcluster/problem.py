@@ -53,6 +53,7 @@ class Solution(object):
     return self._v
 
   @property
+  @profile
   def clusters(self):
     from scipy.sparse.csgraph import connected_components
     from scipy.sparse import csr_matrix
@@ -62,24 +63,27 @@ class Solution(object):
 
     # two centers are "the same" if they're much closer to each other than any
     # 2 data points are (excepting overlapping points)
-    norm      = self.problem.norm
     X, w      = self.problem.X, self.problem.w
-    distances = [norm(X[i] - X[j]) for (i, j, _) in iterrows(w)]
-    distances = [d for d in distances if d > 0]
+    i         = w[:,0].astype(int)
+    j         = w[:,1].astype(int)
+    distances = self.problem.norm(X[i] - X[j])
+    distances = distances[distances > 0]
     if len(distances) == 0:
       epsilon = 1e-5  # arbitrary
     else:
-      epsilon = min(d for d in distances if d > 0) * 1e-2
+      epsilon = np.min(distances) * 1e-2
 
-    edgelist = []
-    for l,(i,j,_) in enumerate(iterrows(self.problem.w)):
-      if np.linalg.norm(self.v[l]) / n_features < epsilon:
-        edgelist.append( (1, i, j) )
-        edgelist.append( (1, j, i) )
-    if len(edgelist) > 0:
-      vals, rows, cols = zip(*edgelist)
-    else:
-      vals, rows, cols = [], [], []
+    # construct a graph such that 2 nodes i, j are connected if
+    # norm(v[l]) <= epsilon. We'll use this to find the connected components --
+    # i.e. the cluster labels.
+    rows     = np.concatenate([i,j])
+    cols     = np.concatenate([j,i])
+
+    isclose  = np.linalg.norm(self.v, axis=1) / n_features < epsilon
+    vals     = np.concatenate([isclose, isclose])
+
+    rows, cols, vals = rows[vals], cols[vals], vals[vals].astype(int)
+
     adjacency            = csr_matrix((vals, (rows, cols)), shape=(n_samples, n_samples))
     n_components, labels = connected_components(adjacency, directed=False)
 
