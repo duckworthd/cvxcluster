@@ -6,6 +6,12 @@ try:
 except ImportError:
   njit = jit = lambda s: lambda x: x
 
+  import warnings
+  warnings.warn(
+    "Failed to import numba. Calls to CoordinateAscent.minimize will run "
+    "unoptimized."
+  )
+
 
 @njit("void(f8[:])")
 def sillysort(arr):
