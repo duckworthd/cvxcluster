@@ -3,6 +3,7 @@ from .ama import *
 from .clusterpath import *
 from .conditions import *
 from .coordinate_ascent import *
+from .loading import *
 from .problem import *
 from .sampling import *
 from .solve import *
